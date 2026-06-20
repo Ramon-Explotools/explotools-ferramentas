@@ -145,6 +145,17 @@ const FERRAMENTAS = [
     url: 'ferramentas/estoque/index.html',
     health: 'https://explotools-coleta-api.onrender.com/api/health',
     cor: '#2f7fe0', corDim: 'rgba(47,127,224,.12)'
+  },
+  {
+    id: 'podcast',
+    nome: 'Café com Sonda',
+    tag: 'Podcast',
+    icon: '🎙️',
+    desc: 'Gera o episódio quinzenal: pesquisa, relatório, áudio no NotebookLM e divulgação. Você roda, autentica e acompanha o processo aqui.',
+    url: 'ferramentas/cafe-com-sonda/index.html',
+    health: null,
+    statusLabel: 'Painel local',
+    cor: '#7c3aed', corDim: 'rgba(124,58,237,.12)'
   }
 ];
 
@@ -164,7 +175,7 @@ FERRAMENTAS.forEach(function(f) {
     '<div class="tool-desc">' + f.desc + '</div>' +
     '<div class="tool-foot">' +
       '<div class="status"><span class="dot ' + (f.health ? 'wait' : 'static') + '" id="dot-' + f.id + '"></span>' +
-        '<span id="st-' + f.id + '">' + (f.health ? 'Verificando...' : 'Site estático') + '</span></div>' +
+        '<span id="st-' + f.id + '">' + (f.health ? 'Verificando...' : (f.statusLabel || 'Site estático')) + '</span></div>' +
       '<span class="open-arrow">Abrir &rsaquo;</span>' +
     '</div>';
   grid.appendChild(a);
