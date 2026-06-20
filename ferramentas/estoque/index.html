@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Explotools Coleta</title>
+    <link rel="stylesheet" href="./styles.css?v=20260511-01" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace">
+        <header class="topbar">
+          <img src="./assets/explotools-logo.png" alt="Explotools" class="logo" />
+          <div>
+            <p class="eyebrow">Ordem de coleta</p>
+            <h1>Gerar separação de estoque</h1>
+          </div>
+        </header>
+
+        <nav class="mode-tabs" aria-label="Tipo de ordem">
+          <button class="tab-button is-active" type="button" data-tab="picking">Envio / coleta</button>
+          <button class="tab-button" type="button" data-tab="receiving">Recebimento</button>
+        </nav>
+
+        <form id="picking-form" class="upload-panel mode-panel" data-panel="picking">
+          <section class="source-panel">
+            <div>
+              <span>Base de localização</span>
+              <strong id="location-file-name">08 - Posicoes Estoque.xlsx</strong>
+            </div>
+            <a
+              class="secondary-button location-sheet-link"
+              href="https://docs.google.com/spreadsheets/d/1dNO6dz3_x42Qgv6cckNo-OXhHQzGgrUd/edit?gid=1557139349#gid=1557139349"
+              target="_blank"
+              rel="noopener"
+            >
+              Abrir planilha
+            </a>
+          </section>
+
+          <label class="dropzone" id="dropzone">
+            <input id="sales-pdfs" name="sales_pdfs" type="file" accept=".pdf" multiple />
+            <span class="dropzone-title">Arraste PDFs de venda aqui</span>
+            <span class="dropzone-copy">ou toque para selecionar um ou mais arquivos</span>
+          </label>
+
+          <ul id="file-list" class="file-list" aria-live="polite"></ul>
+
+          <div class="actions">
+            <button type="submit" id="submit-button">Gerar ordem</button>
+            <p id="status" role="status">Aguardando arquivos.</p>
+          </div>
+        </form>
+
+        <form id="receiving-form" class="upload-panel mode-panel" data-panel="receiving" hidden>
+          <section class="source-panel">
+            <div>
+              <span>Base de localização</span>
+              <strong id="receiving-location-file-name">08 - Posicoes Estoque.xlsx</strong>
+            </div>
+            <a
+              class="secondary-button location-sheet-link"
+              href="https://docs.google.com/spreadsheets/d/1dNO6dz3_x42Qgv6cckNo-OXhHQzGgrUd/edit?gid=1557139349#gid=1557139349"
+              target="_blank"
+              rel="noopener"
+            >
+              Abrir planilha
+            </a>
+          </section>
+
+          <label class="dropzone" id="invoice-dropzone">
+            <input id="invoice-pdfs" name="invoice_pdfs" type="file" accept=".pdf" multiple />
+            <span class="dropzone-title">Arraste PDFs de invoice aqui</span>
+            <span class="dropzone-copy">ou toque para selecionar um ou mais arquivos de recebimento</span>
+          </label>
+
+          <ul id="invoice-file-list" class="file-list" aria-live="polite"></ul>
+
+          <div class="actions">
+            <button type="submit" id="receiving-submit-button">Gerar recebimento</button>
+            <p id="receiving-status" role="status">Aguardando arquivos.</p>
+          </div>
+        </form>
+      </section>
+
+      <section id="result-panel" class="result-panel" hidden>
+        <header class="result-header">
+          <div>
+            <p class="eyebrow" id="result-eyebrow">PDF pronto</p>
+            <h2 id="result-title">Pré-visualização da ordem</h2>
+          </div>
+          <div class="result-actions">
+            <a id="open-link" class="secondary-button" href="#" target="_blank" rel="noopener">Abrir</a>
+            <a id="download-link" class="secondary-button" href="#" download="ordem_de_coleta.pdf">Baixar PDF</a>
+            <button id="print-button" type="button">Imprimir</button>
+          </div>
+        </header>
+        <div id="pdf-canvas-preview" class="pdf-canvas-preview" aria-label="Pré-visualização da ordem de coleta"></div>
+        <iframe id="pdf-preview" title="Pré-visualização da ordem de coleta"></iframe>
+      </section>
+    </main>
+
+    <script src="./config.js?v=20260511-01"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="./script.js?v=20260511-01"></script>
+  </body>
+</html>
