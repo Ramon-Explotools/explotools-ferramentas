@@ -152,9 +152,10 @@ const FERRAMENTAS = [
     tag: 'Podcast',
     icon: '🎙️',
     desc: 'Gera o episódio quinzenal: pesquisa, relatório, áudio no NotebookLM e divulgação. Você roda, autentica e acompanha o processo aqui.',
-    url: 'ferramentas/cafe-com-sonda/index.html',
+    url: 'http://127.0.0.1:8765/',
+    alvo: '_blank',
     health: null,
-    statusLabel: 'Painel local',
+    statusLabel: 'Abre no seu PC',
     cor: '#7c3aed', corDim: 'rgba(124,58,237,.12)'
   }
 ];
@@ -165,6 +166,7 @@ FERRAMENTAS.forEach(function(f) {
   const a = document.createElement('a');
   a.className = 'tool-card';
   a.href = f.url;
+  if (f.alvo) { a.target = f.alvo; a.rel = 'noopener'; }
   a.style.setProperty('--accent', f.cor);
   a.style.setProperty('--accent-dim', f.corDim);
   a.innerHTML =
