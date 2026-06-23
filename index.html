@@ -83,6 +83,16 @@ body{
 .tool-card:hover .open-arrow{text-shadow:0 0 12px var(--accent,var(--red))}
 
 /* ── FOOTER ── */
+.acoes-sec{max-width:1100px;margin:8px auto 0;padding:0 32px}
+.acoes-titulo{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);margin:24px 0 14px}
+.acoes{display:flex;flex-wrap:wrap;gap:12px}
+.acao{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent,var(--red));border-radius:8px;padding:13px 18px;transition:transform .12s,border-color .2s,box-shadow .2s}
+.acao:hover{transform:translateY(-2px);border-color:var(--accent,var(--red));box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.acao-ic{font-size:20px;line-height:1}
+.acao-tx{display:flex;flex-direction:column}
+.acao-nome{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--text-bright)}
+.acao-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+.acao-run{margin-left:8px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent,var(--red))}
 .foot{max-width:1100px;margin:0 auto 48px;padding:0 32px;text-align:center;color:var(--text-dim);font-size:12px;letter-spacing:.5px}
 .foot a{color:var(--text-muted);text-decoration:none}
 .foot a:hover{color:var(--red)}
@@ -117,6 +127,11 @@ body{
 
 <div class="container">
   <div class="grid" id="grid"></div>
+</div>
+
+<div class="acoes-sec">
+  <div class="acoes-titulo">Ações rápidas</div>
+  <div class="acoes" id="acoes"></div>
 </div>
 
 <div class="foot">
@@ -160,6 +175,17 @@ const FERRAMENTAS = [
   }
 ];
 
+// ── Ações rápidas (botões de execução, não são projetos) ───────────────────
+const ACOES = [
+  {
+    nome: 'Cobranças vencidas',
+    sub: 'Conta Azul · dispara as cobranças em atraso',
+    icon: '💰',
+    url: 'http://127.0.0.1:8765/cobrancas',
+    cor: '#0ea5a5'
+  }
+];
+
 // ── Render dos cards ────────────────────────────────────────────────────────
 const grid = document.getElementById('grid');
 FERRAMENTAS.forEach(function(f) {
@@ -181,6 +207,23 @@ FERRAMENTAS.forEach(function(f) {
       '<span class="open-arrow">Abrir &rsaquo;</span>' +
     '</div>';
   grid.appendChild(a);
+});
+
+// ── Render das ações rápidas ────────────────────────────────────────────────
+const acoes = document.getElementById('acoes');
+ACOES.forEach(function(ac) {
+  const a = document.createElement('a');
+  a.className = 'acao';
+  a.href = ac.url;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.style.setProperty('--accent', ac.cor);
+  a.innerHTML =
+    '<span class="acao-ic">' + ac.icon + '</span>' +
+    '<span class="acao-tx"><span class="acao-nome">' + ac.nome + '</span>' +
+    '<span class="acao-sub">' + ac.sub + '</span></span>' +
+    '<span class="acao-run">Rodar &rsaquo;</span>';
+  acoes.appendChild(a);
 });
 
 // ── Verificação de status (acorda o Render) ─────────────────────────────────
