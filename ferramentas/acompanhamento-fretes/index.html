@@ -99,6 +99,7 @@ select{cursor:pointer}
   <option value="Jamef"></option><option value="TNT"></option><option value="Total Express"></option><option value="Rodonaves"></option>
   <option value="SEDEX"></option><option value="Gol Log"></option><option value="Latam Cargo"></option><option value="M2000"></option>
 </datalist>
+<datalist id="clientes"></datalist>
 
 <script>
 var STORE_KEY='explotools_fretes_v1';
@@ -146,7 +147,7 @@ function render(bloco){
     var venc=(r.previsao&&r.previsao<hojeISO()&&r.status!=='Entregue')?' prev-vencido':'';
     var rec=entregueRecente(r);
     return '<tr class="'+(rec?'tr-recente':'')+'">'+
-      '<td><input data-b="'+bloco+'" data-i="'+i+'" data-f="cliente" placeholder="Nome" value="'+esc(r.cliente)+'"></td>'+
+      '<td><input list="clientes" data-b="'+bloco+'" data-i="'+i+'" data-f="cliente" placeholder="Nome (selecione ou digite)" value="'+esc(r.cliente)+'"></td>'+
       '<td><input list="transportadoras" data-b="'+bloco+'" data-i="'+i+'" data-f="transportadora" placeholder="Transportadora" value="'+esc(r.transportadora)+'"></td>'+
       '<td><input data-b="'+bloco+'" data-i="'+i+'" data-f="nf" placeholder="NF-e" value="'+esc(r.nf)+'"></td>'+
       '<td><input type="date" class="prev'+venc+'" data-b="'+bloco+'" data-i="'+i+'" data-f="previsao" value="'+esc(r.previsao)+'"></td>'+
@@ -198,6 +199,22 @@ document.addEventListener('change',function(e){
     render(el.dataset.b);}
   if(el.dataset.f==='previsao'||el.dataset.f==='entrega'){render(el.dataset.b);}
 });
+
+// Puxa os clientes cadastrados na ferramenta de cotacao de frete (mesma API).
+// Sao apenas sugestoes: da para selecionar ou digitar qualquer outro nome.
+(function carregarClientes(){
+  fetch('https://explotools-frete-api.onrender.com/clientes')
+    .then(function(r){return r.ok?r.json():[];})
+    .then(function(lista){
+      if(!Array.isArray(lista)||!lista.length)return;
+      var nomes=lista.map(function(c){return c&&c.nome?c.nome:'';})
+                     .filter(Boolean).sort(function(a,b){return a.localeCompare(b);});
+      document.getElementById('clientes').innerHTML=nomes.map(function(n){
+        return '<option value="'+n.replace(/"/g,'&quot;')+'"></option>';
+      }).join('');
+    })
+    .catch(function(){/* API hibernando ou offline; segue dando para digitar */});
+})();
 
 // Clicar em qualquer parte do campo de data abre o calendario.
 document.addEventListener('click',function(e){
