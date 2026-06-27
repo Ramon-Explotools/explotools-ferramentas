@@ -29,7 +29,7 @@ table{width:100%;border-collapse:collapse;font-size:13.5px}
 th{font-family:'Barlow Condensed';font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}
 td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:last-child td{border-bottom:none}
-.col-cli{width:30%}.col-tr{width:22%}.col-prev{width:16%}.col-st{width:20%}.col-x{width:46px;text-align:center}
+.col-cli{width:16%}.col-tr{width:13%}.col-nf{width:11%}.col-prev{width:13%}.col-st{width:14%}.col-obs{width:24%}.col-x{width:42px;text-align:center}
 input,select{width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:5px;color:var(--text-bright);font-size:13.5px;font-family:'Barlow',sans-serif;padding:9px 10px;transition:border-color .15s}
 input:focus,select:focus{outline:none;border-color:var(--red)}
 input::placeholder{color:var(--text-dim)}
@@ -65,8 +65,8 @@ select{cursor:pointer}
     </div>
     <table>
       <thead><tr>
-        <th class="col-cli">Cliente</th><th class="col-tr">Transportadora</th>
-        <th class="col-prev">Previsão de entrega</th><th class="col-st">Status</th><th class="col-x"></th>
+        <th class="col-cli">Cliente</th><th class="col-tr">Transportadora</th><th class="col-nf">Nota Fiscal</th>
+        <th class="col-prev">Previsão de entrega</th><th class="col-st">Status</th><th class="col-obs">Observação</th><th class="col-x"></th>
       </tr></thead>
       <tbody id="tb-enviados"></tbody>
     </table>
@@ -80,8 +80,8 @@ select{cursor:pointer}
     </div>
     <table>
       <thead><tr>
-        <th class="col-cli">Fornecedor / Cliente</th><th class="col-tr">Transportadora</th>
-        <th class="col-prev">Previsão de entrega</th><th class="col-st">Status</th><th class="col-x"></th>
+        <th class="col-cli">Fornecedor / Cliente</th><th class="col-tr">Transportadora</th><th class="col-nf">Nota Fiscal</th>
+        <th class="col-prev">Previsão de entrega</th><th class="col-st">Status</th><th class="col-obs">Observação</th><th class="col-x"></th>
       </tr></thead>
       <tbody id="tb-receber"></tbody>
     </table>
@@ -115,15 +115,17 @@ function hojeISO(){return new Date().toISOString().slice(0,10);}
 function render(bloco){
   var tb=document.getElementById('tb-'+bloco);
   var linhas=data[bloco];
-  if(!linhas.length){tb.innerHTML='<tr><td colspan="5" class="vazio">Nenhum item ainda. Clique em “Adicionar”.</td></tr>';atualizarChips(bloco);return;}
+  if(!linhas.length){tb.innerHTML='<tr><td colspan="7" class="vazio">Nenhum item ainda. Clique em “Adicionar”.</td></tr>';atualizarChips(bloco);return;}
   tb.innerHTML=linhas.map(function(r,i){
     var opts=STATUS.map(function(s){return '<option'+(r.status===s?' selected':'')+'>'+s+'</option>';}).join('');
     var venc=(r.previsao&&r.previsao<hojeISO()&&r.status!=='Entregue')?' prev-vencido':'';
     return '<tr>'+
       '<td><input data-b="'+bloco+'" data-i="'+i+'" data-f="cliente" placeholder="Nome" value="'+esc(r.cliente)+'"></td>'+
       '<td><input list="transportadoras" data-b="'+bloco+'" data-i="'+i+'" data-f="transportadora" placeholder="Transportadora" value="'+esc(r.transportadora)+'"></td>'+
+      '<td><input data-b="'+bloco+'" data-i="'+i+'" data-f="nf" placeholder="NF-e" value="'+esc(r.nf)+'"></td>'+
       '<td><input type="date" class="prev'+venc+'" data-b="'+bloco+'" data-i="'+i+'" data-f="previsao" value="'+esc(r.previsao)+'"></td>'+
       '<td><select class="'+(ST_CLASS[r.status]||'')+'" data-b="'+bloco+'" data-i="'+i+'" data-f="status">'+opts+'</select></td>'+
+      '<td><input data-b="'+bloco+'" data-i="'+i+'" data-f="obs" placeholder="Observação" value="'+esc(r.obs)+'"></td>'+
       '<td class="col-x"><button class="btn-x" title="Remover" onclick="remover(\''+bloco+'\','+i+')">&times;</button></td>'+
     '</tr>';
   }).join('');
@@ -143,7 +145,7 @@ function atualizarChips(bloco){
 }
 
 function addLinha(bloco){
-  data[bloco].push({cliente:'',transportadora:'',previsao:'',status:'Em andamento'});
+  data[bloco].push({cliente:'',transportadora:'',nf:'',previsao:'',status:'Em andamento',obs:''});
   salvar();render(bloco);
 }
 function remover(bloco,i){
