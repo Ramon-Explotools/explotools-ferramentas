@@ -103,12 +103,18 @@ select{cursor:pointer}
 
 <script>
 var STORE_KEY='explotools_fretes_v1';
-var STATUS=['Em andamento','No prazo','Atrasado','Entregue'];
+var STATUS=['No prazo','Atrasado','Entregue'];
 var ST_CLASS={'Em andamento':'st-andamento','No prazo':'st-prazo','Atrasado':'st-atrasado','Entregue':'st-entregue'};
 var data=carregar();
 
 function carregar(){
-  try{var d=JSON.parse(localStorage.getItem(STORE_KEY));if(d&&d.enviados&&d.receber)return d;}catch(e){}
+  try{var d=JSON.parse(localStorage.getItem(STORE_KEY));
+    if(d&&d.enviados&&d.receber){
+      // migra status antigo "Em andamento" -> "No prazo"
+      ['enviados','receber'].forEach(function(b){d[b].forEach(function(r){if(r.status==='Em andamento')r.status='No prazo';});});
+      return d;
+    }
+  }catch(e){}
   return {enviados:[],receber:[]};
 }
 function salvar(){localStorage.setItem(STORE_KEY,JSON.stringify(data));}
@@ -176,7 +182,7 @@ function atualizarChips(bloco){
 }
 
 function addLinha(bloco){
-  data[bloco].push({cliente:'',transportadora:'',nf:'',previsao:'',status:'Em andamento',entrega:'',obs:''});
+  data[bloco].push({cliente:'',transportadora:'',nf:'',previsao:'',status:'No prazo',entrega:'',obs:''});
   salvar();render(bloco);
 }
 function remover(bloco,i){
