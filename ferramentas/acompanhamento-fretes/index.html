@@ -125,9 +125,20 @@ function entregueRecente(r){
   var dd=diasDesde(r.entrega);
   return dd!==null&&dd>=0&&dd<=2;
 }
+// Auto-atraso: pedido "aberto" (Em andamento / No prazo) com previsao vencida -> Atrasado.
+function aplicarAtraso(bloco){
+  var mudou=false;
+  data[bloco].forEach(function(r){
+    if((r.status==='Em andamento'||r.status==='No prazo')&&r.previsao&&r.previsao<hojeISO()){
+      r.status='Atrasado';mudou=true;
+    }
+  });
+  if(mudou)salvar();
+}
 
 function render(bloco){
   var tb=document.getElementById('tb-'+bloco);
+  aplicarAtraso(bloco);
   var linhas=data[bloco];
   if(!linhas.length){tb.innerHTML='<tr><td colspan="8" class="vazio">Nenhum item ainda. Clique em “Adicionar”.</td></tr>';atualizarChips(bloco);return;}
   tb.innerHTML=linhas.map(function(r,i){
@@ -186,6 +197,14 @@ document.addEventListener('change',function(e){
     // re-render para refletir atraso/recente/contadores
     render(el.dataset.b);}
   if(el.dataset.f==='previsao'||el.dataset.f==='entrega'){render(el.dataset.b);}
+});
+
+// Clicar em qualquer parte do campo de data abre o calendario.
+document.addEventListener('click',function(e){
+  var el=e.target;
+  if(el&&el.tagName==='INPUT'&&el.type==='date'&&typeof el.showPicker==='function'){
+    try{el.showPicker();}catch(_){}
+  }
 });
 
 render('enviados');render('receber');
