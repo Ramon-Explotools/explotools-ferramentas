@@ -29,7 +29,9 @@ table{width:100%;border-collapse:collapse;font-size:13.5px}
 th{font-family:'Barlow Condensed';font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}
 td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:last-child td{border-bottom:none}
-.col-cli{width:16%}.col-tr{width:13%}.col-nf{width:11%}.col-prev{width:13%}.col-st{width:14%}.col-obs{width:24%}.col-x{width:42px;text-align:center}
+.col-cli{width:15%}.col-tr{width:12%}.col-nf{width:9%}.col-prev{width:12%}.col-st{width:12%}.col-entrega{width:12%}.col-obs{width:18%}.col-x{width:40px;text-align:center}
+.tr-recente td{background:rgba(34,197,94,.10)}
+.entrega-recente{border-color:rgba(34,197,94,.6)!important;color:#6fe09a!important;background:rgba(34,197,94,.08)}
 input,select{width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:5px;color:var(--text-bright);font-size:13.5px;font-family:'Barlow',sans-serif;padding:9px 10px;transition:border-color .15s}
 input:focus,select:focus{outline:none;border-color:var(--red)}
 input::placeholder{color:var(--text-dim)}
@@ -66,7 +68,7 @@ select{cursor:pointer}
     <table>
       <thead><tr>
         <th class="col-cli">Cliente</th><th class="col-tr">Transportadora</th><th class="col-nf">Nota Fiscal</th>
-        <th class="col-prev">Previsão de entrega</th><th class="col-st">Status</th><th class="col-obs">Observação</th><th class="col-x"></th>
+        <th class="col-prev">Previsão de entrega</th><th class="col-st">Status</th><th class="col-entrega">Data de entrega</th><th class="col-obs">Observação</th><th class="col-x"></th>
       </tr></thead>
       <tbody id="tb-enviados"></tbody>
     </table>
@@ -81,7 +83,7 @@ select{cursor:pointer}
     <table>
       <thead><tr>
         <th class="col-cli">Fornecedor / Cliente</th><th class="col-tr">Transportadora</th><th class="col-nf">Nota Fiscal</th>
-        <th class="col-prev">Previsão de entrega</th><th class="col-st">Status</th><th class="col-obs">Observação</th><th class="col-x"></th>
+        <th class="col-prev">Previsão de entrega</th><th class="col-st">Status</th><th class="col-entrega">Data de entrega</th><th class="col-obs">Observação</th><th class="col-x"></th>
       </tr></thead>
       <tbody id="tb-receber"></tbody>
     </table>
@@ -112,20 +114,33 @@ function salvar(){localStorage.setItem(STORE_KEY,JSON.stringify(data));}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 function hojeISO(){return new Date().toISOString().slice(0,10);}
+function diasDesde(iso){
+  if(!iso)return null;
+  var d=new Date(iso+'T00:00:00'),h=new Date(hojeISO()+'T00:00:00');
+  return Math.round((h-d)/86400000);
+}
+// Entregue nos ultimos 2 dias (com data de entrega preenchida) -> continua "em aberto" e destacado.
+function entregueRecente(r){
+  if(r.status!=='Entregue'||!r.entrega)return false;
+  var dd=diasDesde(r.entrega);
+  return dd!==null&&dd>=0&&dd<=2;
+}
 
 function render(bloco){
   var tb=document.getElementById('tb-'+bloco);
   var linhas=data[bloco];
-  if(!linhas.length){tb.innerHTML='<tr><td colspan="7" class="vazio">Nenhum item ainda. Clique em “Adicionar”.</td></tr>';atualizarChips(bloco);return;}
+  if(!linhas.length){tb.innerHTML='<tr><td colspan="8" class="vazio">Nenhum item ainda. Clique em “Adicionar”.</td></tr>';atualizarChips(bloco);return;}
   tb.innerHTML=linhas.map(function(r,i){
     var opts=STATUS.map(function(s){return '<option'+(r.status===s?' selected':'')+'>'+s+'</option>';}).join('');
     var venc=(r.previsao&&r.previsao<hojeISO()&&r.status!=='Entregue')?' prev-vencido':'';
-    return '<tr>'+
+    var rec=entregueRecente(r);
+    return '<tr class="'+(rec?'tr-recente':'')+'">'+
       '<td><input data-b="'+bloco+'" data-i="'+i+'" data-f="cliente" placeholder="Nome" value="'+esc(r.cliente)+'"></td>'+
       '<td><input list="transportadoras" data-b="'+bloco+'" data-i="'+i+'" data-f="transportadora" placeholder="Transportadora" value="'+esc(r.transportadora)+'"></td>'+
       '<td><input data-b="'+bloco+'" data-i="'+i+'" data-f="nf" placeholder="NF-e" value="'+esc(r.nf)+'"></td>'+
       '<td><input type="date" class="prev'+venc+'" data-b="'+bloco+'" data-i="'+i+'" data-f="previsao" value="'+esc(r.previsao)+'"></td>'+
       '<td><select class="'+(ST_CLASS[r.status]||'')+'" data-b="'+bloco+'" data-i="'+i+'" data-f="status">'+opts+'</select></td>'+
+      '<td><input type="date" class="'+(rec?'entrega-recente':'')+'" data-b="'+bloco+'" data-i="'+i+'" data-f="entrega" value="'+esc(r.entrega)+'"></td>'+
       '<td><input data-b="'+bloco+'" data-i="'+i+'" data-f="obs" placeholder="Observação" value="'+esc(r.obs)+'"></td>'+
       '<td class="col-x"><button class="btn-x" title="Remover" onclick="remover(\''+bloco+'\','+i+')">&times;</button></td>'+
     '</tr>';
@@ -138,15 +153,18 @@ function atualizarChips(bloco){
   var n=l.length;
   var entreg=l.filter(function(r){return r.status==='Entregue';}).length;
   var atras=l.filter(function(r){return r.status==='Atrasado';}).length;
+  var recentes=l.filter(entregueRecente).length;
+  var emAberto=l.filter(function(r){return r.status!=='Entregue';}).length+recentes;
   document.getElementById('chips-'+bloco).innerHTML=
     '<span class="chip"><b>'+n+'</b> no total</span>'+
-    '<span class="chip"><b>'+(n-entreg)+'</b> em aberto</span>'+
+    '<span class="chip"><b>'+emAberto+'</b> em aberto</span>'+
     (atras?'<span class="chip" style="border-color:rgba(216,27,42,.4);color:#f08a93"><b>'+atras+'</b> atrasado(s)</span>':'')+
+    (recentes?'<span class="chip" style="border-color:rgba(34,197,94,.4);color:#6fe09a"><b>'+recentes+'</b> entregue(s) recente(s)</span>':'')+
     '<span class="chip"><b>'+entreg+'</b> entregue(s)</span>';
 }
 
 function addLinha(bloco){
-  data[bloco].push({cliente:'',transportadora:'',nf:'',previsao:'',status:'Em andamento',obs:''});
+  data[bloco].push({cliente:'',transportadora:'',nf:'',previsao:'',status:'Em andamento',entrega:'',obs:''});
   salvar();render(bloco);
 }
 function remover(bloco,i){
@@ -165,9 +183,9 @@ document.addEventListener('change',function(e){
   data[el.dataset.b][el.dataset.i][el.dataset.f]=el.value;
   salvar();
   if(el.dataset.f==='status'){el.className=ST_CLASS[el.value]||'';
-    // re-render so para refletir atraso/contadores
+    // re-render para refletir atraso/recente/contadores
     render(el.dataset.b);}
-  if(el.dataset.f==='previsao'){render(el.dataset.b);}
+  if(el.dataset.f==='previsao'||el.dataset.f==='entrega'){render(el.dataset.b);}
 });
 
 render('enviados');render('receber');
