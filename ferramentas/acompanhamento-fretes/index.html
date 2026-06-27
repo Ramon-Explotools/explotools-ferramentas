@@ -25,6 +25,9 @@ body{font-family:'Barlow','Segoe UI',sans-serif;background:var(--bg);color:var(-
 .chips{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
 .chip{font-family:'Barlow Condensed';font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:3px 10px;border-radius:20px;background:var(--surface3);border:1px solid var(--border2);color:var(--text-muted)}
 .chip b{color:var(--text-bright)}
+.chip-clic{cursor:pointer;user-select:none;transition:background .15s,border-color .15s,color .15s}
+.chip-clic:hover{border-color:var(--text-muted);color:var(--text-bright)}
+.chip-ativo,.chip-ativo b{background:var(--red)!important;border-color:var(--red)!important;color:#fff!important}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 th{font-family:'Barlow Condensed';font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}
 td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
@@ -106,6 +109,17 @@ var STORE_KEY='explotools_fretes_v1';
 var STATUS=['No prazo','Atrasado','Entregue'];
 var ST_CLASS={'Em andamento':'st-andamento','No prazo':'st-prazo','Atrasado':'st-atrasado','Entregue':'st-entregue'};
 var data=carregar();
+var filtro={enviados:'todos',receber:'todos'};
+function setFiltro(bloco,f){filtro[bloco]=(filtro[bloco]===f)?'todos':f;render(bloco);}
+function passaFiltro(bloco,r){
+  var f=filtro[bloco];
+  if(f==='todos')return true;
+  if(f==='aberto')return r.status!=='Entregue'||entregueRecente(r);
+  if(f==='atrasado')return r.status==='Atrasado';
+  if(f==='recente')return entregueRecente(r);
+  if(f==='entregue')return r.status==='Entregue';
+  return true;
+}
 
 function carregar(){
   try{var d=JSON.parse(localStorage.getItem(STORE_KEY));
@@ -148,7 +162,8 @@ function render(bloco){
   aplicarAtraso(bloco);
   var linhas=data[bloco];
   if(!linhas.length){tb.innerHTML='<tr><td colspan="8" class="vazio">Nenhum item ainda. Clique em “Adicionar”.</td></tr>';atualizarChips(bloco);return;}
-  tb.innerHTML=linhas.map(function(r,i){
+  var html=linhas.map(function(r,i){
+    if(!passaFiltro(bloco,r))return '';
     var opts=STATUS.map(function(s){return '<option'+(r.status===s?' selected':'')+'>'+s+'</option>';}).join('');
     var venc=(r.previsao&&r.previsao<hojeISO()&&r.status!=='Entregue')?' prev-vencido':'';
     var rec=entregueRecente(r);
@@ -163,6 +178,8 @@ function render(bloco){
       '<td class="col-x"><button class="btn-x" title="Remover" onclick="remover(\''+bloco+'\','+i+')">&times;</button></td>'+
     '</tr>';
   }).join('');
+  if(!html)html='<tr><td colspan="8" class="vazio">Nenhum item neste filtro.</td></tr>';
+  tb.innerHTML=html;
   atualizarChips(bloco);
 }
 
@@ -173,12 +190,16 @@ function atualizarChips(bloco){
   var atras=l.filter(function(r){return r.status==='Atrasado';}).length;
   var recentes=l.filter(entregueRecente).length;
   var emAberto=l.filter(function(r){return r.status!=='Entregue';}).length+recentes;
+  function ch(f,label,extra){
+    var ativo=(filtro[bloco]===f)?' chip-ativo':'';
+    return '<span class="chip chip-clic'+ativo+'" '+(extra||'')+' onclick="setFiltro(\''+bloco+'\',\''+f+'\')">'+label+'</span>';
+  }
   document.getElementById('chips-'+bloco).innerHTML=
-    '<span class="chip"><b>'+n+'</b> no total</span>'+
-    '<span class="chip"><b>'+emAberto+'</b> em aberto</span>'+
-    (atras?'<span class="chip" style="border-color:rgba(216,27,42,.4);color:#f08a93"><b>'+atras+'</b> atrasado(s)</span>':'')+
-    (recentes?'<span class="chip" style="border-color:rgba(34,197,94,.4);color:#6fe09a"><b>'+recentes+'</b> entregue(s) recente(s)</span>':'')+
-    '<span class="chip"><b>'+entreg+'</b> entregue(s)</span>';
+    ch('todos','<b>'+n+'</b> no total')+
+    ch('aberto','<b>'+emAberto+'</b> em aberto')+
+    (atras?ch('atrasado','<b>'+atras+'</b> atrasado(s)','style="border-color:rgba(216,27,42,.4);color:#f08a93"'):'')+
+    (recentes?ch('recente','<b>'+recentes+'</b> entregue(s) recente(s)','style="border-color:rgba(34,197,94,.4);color:#6fe09a"'):'')+
+    ch('entregue','<b>'+entreg+'</b> entregue(s)');
 }
 
 function addLinha(bloco){
