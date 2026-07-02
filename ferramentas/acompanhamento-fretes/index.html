@@ -33,7 +33,13 @@ table{width:100%;border-collapse:collapse;font-size:13.5px}
 th{font-family:'Barlow Condensed';font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}
 td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:last-child td{border-bottom:none}
-.col-cli{width:15%}.col-tr{width:12%}.col-nf{width:9%}.col-prev{width:12%}.col-st{width:12%}.col-entrega{width:12%}.col-obs{width:18%}.col-x{width:40px;text-align:center}
+.col-cli{width:14%}.col-tr{width:11%}.col-rast{width:8%}.col-nf{width:8%}.col-prev{width:11%}.col-st{width:11%}.col-entrega{width:11%}.col-obs{width:16%}.col-x{width:38px;text-align:center}
+.rast-link{color:#7fb0ee;text-decoration:none;font-size:12.5px;font-weight:600;white-space:nowrap}
+.rast-link:hover{text-decoration:underline;color:#a9cbf5}
+.rast-ed{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;margin-left:4px;padding:2px}
+.rast-ed:hover{color:var(--text-bright)}
+.rast-add{background:var(--surface3);border:1px solid var(--border2);color:var(--text-muted);border-radius:5px;padding:6px 10px;font-size:11px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+.rast-add:hover{border-color:var(--text-muted);color:var(--text)}
 .tr-recente td{background:rgba(34,197,94,.10)}
 .entrega-recente{border-color:rgba(34,197,94,.6)!important;color:#6fe09a!important;background:rgba(34,197,94,.08)}
 input,select{width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:5px;color:var(--text-bright);font-size:13.5px;font-family:'Barlow',sans-serif;padding:9px 10px;transition:border-color .15s}
@@ -71,7 +77,7 @@ select{cursor:pointer}
     </div>
     <table>
       <thead><tr>
-        <th class="col-cli">Cliente</th><th class="col-tr">Transportadora</th><th class="col-nf">Nota Fiscal</th>
+        <th class="col-cli">Cliente</th><th class="col-tr">Transportadora</th><th class="col-rast">Rastreio</th><th class="col-nf">Nota Fiscal</th>
         <th class="col-prev">Previsão de entrega</th><th class="col-st">Status</th><th class="col-entrega">Data de entrega</th><th class="col-obs">Observação</th><th class="col-x"></th>
       </tr></thead>
       <tbody id="tb-enviados"></tbody>
@@ -86,7 +92,7 @@ select{cursor:pointer}
     </div>
     <table>
       <thead><tr>
-        <th class="col-cli">Fornecedor / Cliente</th><th class="col-tr">Transportadora</th><th class="col-nf">Nota Fiscal</th>
+        <th class="col-cli">Fornecedor / Cliente</th><th class="col-tr">Transportadora</th><th class="col-rast">Rastreio</th><th class="col-nf">Nota Fiscal</th>
         <th class="col-prev">Previsão de entrega</th><th class="col-st">Status</th><th class="col-entrega">Data de entrega</th><th class="col-obs">Observação</th><th class="col-x"></th>
       </tr></thead>
       <tbody id="tb-receber"></tbody>
@@ -199,7 +205,7 @@ function render(bloco){
   var tb=document.getElementById('tb-'+bloco);
   aplicarAtraso(bloco);
   var linhas=data[bloco];
-  if(!linhas.length){tb.innerHTML='<tr><td colspan="8" class="vazio">Nenhum item ainda. Clique em “Adicionar”.</td></tr>';atualizarChips(bloco);return;}
+  if(!linhas.length){tb.innerHTML='<tr><td colspan="9" class="vazio">Nenhum item ainda. Clique em “Adicionar”.</td></tr>';atualizarChips(bloco);return;}
   var html=linhas.map(function(r,i){
     if(!passaFiltro(bloco,r))return '';
     var opts=STATUS.map(function(s){return '<option'+(r.status===s?' selected':'')+'>'+s+'</option>';}).join('');
@@ -208,6 +214,7 @@ function render(bloco){
     return '<tr class="'+(rec?'tr-recente':'')+'">'+
       '<td><input list="clientes" data-b="'+bloco+'" data-i="'+i+'" data-f="cliente" placeholder="Nome (selecione ou digite)" value="'+esc(r.cliente)+'"></td>'+
       '<td><input list="transportadoras" data-b="'+bloco+'" data-i="'+i+'" data-f="transportadora" placeholder="Transportadora" value="'+esc(r.transportadora)+'"></td>'+
+      '<td class="col-rast">'+celulaRastreio(bloco,i,r)+'</td>'+
       '<td><input data-b="'+bloco+'" data-i="'+i+'" data-f="nf" placeholder="NF-e" value="'+esc(r.nf)+'"></td>'+
       '<td><input type="date" class="prev'+venc+'" data-b="'+bloco+'" data-i="'+i+'" data-f="previsao" value="'+esc(r.previsao)+'"></td>'+
       '<td><select class="'+(ST_CLASS[r.status]||'')+'" data-b="'+bloco+'" data-i="'+i+'" data-f="status">'+opts+'</select></td>'+
@@ -216,7 +223,7 @@ function render(bloco){
       '<td class="col-x"><button class="btn-x" title="Remover" onclick="remover(\''+bloco+'\','+i+')">&times;</button></td>'+
     '</tr>';
   }).join('');
-  if(!html)html='<tr><td colspan="8" class="vazio">Nenhum item neste filtro.</td></tr>';
+  if(!html)html='<tr><td colspan="9" class="vazio">Nenhum item neste filtro.</td></tr>';
   tb.innerHTML=html;
   atualizarChips(bloco);
 }
@@ -241,12 +248,30 @@ function atualizarChips(bloco){
 }
 
 function addLinha(bloco){
-  data[bloco].push({cliente:'',transportadora:'',nf:'',previsao:'',status:'No prazo',entrega:'',obs:''});
+  data[bloco].push({cliente:'',transportadora:'',rastreio:'',nf:'',previsao:'',status:'No prazo',entrega:'',obs:''});
   salvar();render(bloco);
 }
 function remover(bloco,i){
   if(!confirm('Remover esta linha?'))return;
   data[bloco].splice(i,1);salvar();render(bloco);
+}
+// Rastreio: mostra so um botao "Rastrear" (abre o link) ou "+ link" para colar a URL.
+function celulaRastreio(bloco,i,r){
+  var u=r.rastreio||'';
+  if(u){
+    return '<a class="rast-link" href="'+esc(u)+'" target="_blank" rel="noopener" title="Abrir rastreio na transportadora">🔗 Rastrear</a>'+
+           '<button class="rast-ed" onclick="editarRastreio(\''+bloco+'\','+i+')" title="Editar link">✎</button>';
+  }
+  return '<button class="rast-add" onclick="editarRastreio(\''+bloco+'\','+i+')">+ link</button>';
+}
+function editarRastreio(bloco,i){
+  var atual=data[bloco][i].rastreio||'';
+  var u=prompt('Cole o link de rastreio da transportadora:',atual);
+  if(u===null)return;
+  u=u.trim();
+  if(u&&!/^https?:\/\//i.test(u))u='https://'+u;
+  data[bloco][i].rastreio=u;
+  salvar();render(bloco);
 }
 
 // Edicao inline: atualiza o estado sem re-renderizar (nao perde o foco).
