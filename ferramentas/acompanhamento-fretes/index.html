@@ -40,6 +40,9 @@ tr:last-child td{border-bottom:none}
 .rast-ed:hover{color:var(--text-bright)}
 .rast-add{background:var(--surface3);border:1px solid var(--border2);color:var(--text-muted);border-radius:5px;padding:6px 10px;font-size:11px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
 .rast-add:hover{border-color:var(--text-muted);color:var(--text)}
+.th-sort{cursor:pointer;user-select:none}
+.th-sort:hover{color:var(--text-bright)}
+.ord{color:var(--red)}
 .tr-recente td{background:rgba(34,197,94,.10)}
 .entrega-recente{border-color:rgba(34,197,94,.6)!important;color:#6fe09a!important;background:rgba(34,197,94,.08)}
 input,select{width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:5px;color:var(--text-bright);font-size:13.5px;font-family:'Barlow',sans-serif;padding:9px 10px;transition:border-color .15s}
@@ -78,7 +81,7 @@ select{cursor:pointer}
     <table>
       <thead><tr>
         <th class="col-cli">Cliente</th><th class="col-tr">Transportadora</th><th class="col-rast">Rastreio</th><th class="col-nf">Nota Fiscal</th>
-        <th class="col-prev">Previsão de entrega</th><th class="col-st">Status</th><th class="col-entrega">Data de entrega</th><th class="col-obs">Observação</th><th class="col-x"></th>
+        <th class="col-prev th-sort" onclick="toggleOrdem('enviados')" title="Ordenar por previsão">Previsão de entrega<span id="ord-enviados" class="ord"></span></th><th class="col-st">Status</th><th class="col-entrega">Data de entrega</th><th class="col-obs">Observação</th><th class="col-x"></th>
       </tr></thead>
       <tbody id="tb-enviados"></tbody>
     </table>
@@ -93,7 +96,7 @@ select{cursor:pointer}
     <table>
       <thead><tr>
         <th class="col-cli">Fornecedor / Cliente</th><th class="col-tr">Transportadora</th><th class="col-rast">Rastreio</th><th class="col-nf">Nota Fiscal</th>
-        <th class="col-prev">Previsão de entrega</th><th class="col-st">Status</th><th class="col-entrega">Data de entrega</th><th class="col-obs">Observação</th><th class="col-x"></th>
+        <th class="col-prev th-sort" onclick="toggleOrdem('receber')" title="Ordenar por previsão">Previsão de entrega<span id="ord-receber" class="ord"></span></th><th class="col-st">Status</th><th class="col-entrega">Data de entrega</th><th class="col-obs">Observação</th><th class="col-x"></th>
       </tr></thead>
       <tbody id="tb-receber"></tbody>
     </table>
@@ -118,6 +121,29 @@ var ST_CLASS={'Em andamento':'st-andamento','No prazo':'st-prazo','Atrasado':'st
 var data=carregar();
 var filtro={enviados:'todos',receber:'todos'};
 function setFiltro(bloco,f){filtro[bloco]=(filtro[bloco]===f)?'todos':f;render(bloco);}
+var ordenacao={enviados:null,receber:null}; // null | 'asc' | 'desc' (por previsao)
+function toggleOrdem(bloco){
+  var c=ordenacao[bloco];
+  ordenacao[bloco]=(c===null)?'asc':(c==='asc'?'desc':null);
+  render(bloco);
+}
+function ordenarIndices(bloco,linhas){
+  var idx=linhas.map(function(_,i){return i;});
+  var dir=ordenacao[bloco];
+  if(dir){
+    var m=(dir==='asc')?1:-1;
+    idx.sort(function(a,b){
+      var pa=linhas[a].previsao||'',pb=linhas[b].previsao||'';
+      if(!pa&&!pb)return a-b;
+      if(!pa)return 1;   // sem previsao -> sempre por ultimo
+      if(!pb)return -1;
+      if(pa<pb)return -1*m;
+      if(pa>pb)return 1*m;
+      return a-b;
+    });
+  }
+  return idx;
+}
 function passaFiltro(bloco,r){
   var f=filtro[bloco];
   if(f==='todos')return true;
@@ -206,7 +232,8 @@ function render(bloco){
   aplicarAtraso(bloco);
   var linhas=data[bloco];
   if(!linhas.length){tb.innerHTML='<tr><td colspan="9" class="vazio">Nenhum item ainda. Clique em “Adicionar”.</td></tr>';atualizarChips(bloco);return;}
-  var html=linhas.map(function(r,i){
+  var html=ordenarIndices(bloco,linhas).map(function(i){
+    var r=linhas[i];
     if(!passaFiltro(bloco,r))return '';
     var opts=STATUS.map(function(s){return '<option'+(r.status===s?' selected':'')+'>'+s+'</option>';}).join('');
     var venc=(r.previsao&&r.previsao<hojeISO()&&r.status!=='Entregue')?' prev-vencido':'';
@@ -225,6 +252,8 @@ function render(bloco){
   }).join('');
   if(!html)html='<tr><td colspan="9" class="vazio">Nenhum item neste filtro.</td></tr>';
   tb.innerHTML=html;
+  var os=document.getElementById('ord-'+bloco);
+  if(os)os.textContent=ordenacao[bloco]==='asc'?' ▲':(ordenacao[bloco]==='desc'?' ▼':'');
   atualizarChips(bloco);
 }
 
