@@ -56,6 +56,12 @@ select:focus,input.busca:focus{outline:none;border-color:var(--red)}
 .pill.done{text-decoration:line-through;opacity:.42}
 .pill.venc{background:rgba(216,27,42,.14);border-left-color:var(--red);color:#f4a7ae}
 .pill.alta{box-shadow:inset 0 0 0 1px rgba(245,166,35,.4)}
+.pill.fim{background:rgba(216,27,42,.12);border-left-color:var(--red);color:#f4a7ae}
+.pchk{display:inline-block;width:11px;height:11px;border-radius:50%;border:1.5px solid var(--text-dim);vertical-align:middle;margin-right:5px;cursor:pointer}
+.pchk:hover{border-color:var(--green)}
+.pchk.on{background:var(--green);border-color:var(--green)}
+.tag-fim{color:#f08a93;font-weight:700}
+.sem-cab{cursor:pointer}
 .mais{font-size:10px;color:var(--text-muted);cursor:pointer}
 
 .sem-grid{display:grid;grid-template-columns:repeat(7,1fr)}
@@ -152,24 +158,23 @@ select:focus,input.busca:focus{outline:none;border-color:var(--red)}
     <input type="text" id="m-resp" list="resp-list" placeholder="Quem vai fazer">
     <datalist id="resp-list"></datalist>
     <div class="linha2">
-      <div><label>Data *</label><input type="date" id="m-data"></div>
-      <div><label>Horário (opcional)</label><input type="time" id="m-hora"></div>
+      <div><label>Início *</label><input type="date" id="m-data"></div>
+      <div id="m-fim-wrap"><label>Término (opcional)</label><input type="date" id="m-datafim"></div>
     </div>
     <div class="linha2">
+      <div><label>Horário (opcional)</label><input type="time" id="m-hora"></div>
       <div>
         <label>Prioridade</label>
         <select id="m-prio"><option value="normal">Normal</option><option value="alta">Alta 🔥</option></select>
       </div>
-      <div>
-        <label>Repetição (rotina)</label>
-        <select id="m-rec" onchange="mostraDias()">
-          <option value="nenhuma">Não repete</option>
-          <option value="diaria">Todo dia</option>
-          <option value="semanal">Semanal</option>
-          <option value="mensal">Mensal (mesmo dia)</option>
-        </select>
-      </div>
     </div>
+    <label>Repetição (rotina)</label>
+    <select id="m-rec" onchange="mostraDias()">
+      <option value="nenhuma">Não repete</option>
+      <option value="diaria">Todo dia</option>
+      <option value="semanal">Semanal</option>
+      <option value="mensal">Mensal (mesmo dia)</option>
+    </select>
     <div id="m-dias-wrap" style="display:none">
       <label>Dias da semana</label>
       <div class="dias-sem" id="m-dias"></div>
@@ -247,8 +252,12 @@ function ocorreEm(t,dia){
     return dias.indexOf(deISO(dia).getDay())!==-1;
   }
   if(t.rec==='mensal')return deISO(dia).getDate()===deISO(t.data).getDate();
-  return t.data===dia; // nenhuma
+  // nenhuma: tarefa de 1 dia ou intervalo [data inicio, dataFim]
+  if(t.dataFim&&t.dataFim>t.data)return dia>=t.data&&dia<=t.dataFim;
+  return t.data===dia;
 }
+function prazoDe(t){return ((!t.rec||t.rec==='nenhuma')&&t.dataFim&&t.dataFim>t.data)?t.dataFim:t.data;}
+function ehFinal(t,dia){return (!t.rec||t.rec==='nenhuma')&&t.dataFim&&t.dataFim>t.data&&dia===t.dataFim;}
 function feita(t,dia){
   if(t.rec&&t.rec!=='nenhuma')return (t.doneDates||[]).indexOf(dia)!==-1;
   return !!t.done;
@@ -256,8 +265,16 @@ function feita(t,dia){
 function vencida(t,dia){
   if(feita(t,dia))return false;
   var h=hojeISO();
-  if(dia<h)return true;
-  if(dia===h&&t.hora&&t.hora<agoraHM())return true;
+  if(t.rec&&t.rec!=='nenhuma'){ // rotina: cada ocorrencia vence no proprio dia
+    if(dia<h)return true;
+    if(dia===h&&t.hora&&t.hora<agoraHM())return true;
+    return false;
+  }
+  // tarefa unica ou de intervalo: so vence no dia do prazo (data final)
+  var pz=prazoDe(t);
+  if(dia!==pz)return false;
+  if(pz<h)return true;
+  if(pz===h&&t.hora&&t.hora<agoraHM())return true;
   return false;
 }
 function toggleFeita(id,dia){
@@ -294,6 +311,8 @@ function tarefasDoDia(dia){
   out.sort(function(a,b){
     var ha=a.hora||'99:99',hb=b.hora||'99:99';
     if(ha!==hb)return ha<hb?-1:1;
+    var pa=a.prio==='alta'?0:1,pb=b.prio==='alta'?0:1;
+    if(pa!==pb)return pa-pb;
     return (a.titulo||'').localeCompare(b.titulo||'');
   });
   return out;
@@ -305,7 +324,7 @@ function contarVencidas(){
     if(t.rec&&t.rec!=='nenhuma'){
       for(var d=addDias(h,-7);d<=h;d=addDias(d,1))
         if(ocorreEm(t,d)&&vencida(t,d))n++;
-    } else if(ocorreEm(t,t.data)&&vencida(t,t.data)) n++;
+    } else { var pz=prazoDe(t); if(vencida(t,pz)) n++; }
   });
   return n;
 }
@@ -323,24 +342,30 @@ function toggleConc(){mostrarConc=!mostrarConc;desenhar();}
 function verVencidas(){view='lista';desenhar();window.scrollTo(0,0);}
 
 function pillHTML(t,dia){
-  var cls='pill'+(feita(t,dia)?' done':'')+(vencida(t,dia)?' venc':'')+(t.prio==='alta'?' alta':'');
-  return '<span class="'+cls+'" style="--resp:'+corResp(t.resp)+'" onclick="event.stopPropagation();abrirTarefa(\''+t.id+'\')" title="'+esc(t.titulo)+(t.resp?' — '+esc(t.resp):'')+'">'+
-    (t.hora?'<span class="h">'+t.hora+'</span> ':'')+esc(t.titulo)+'</span>';
+  var done=feita(t,dia),venc=vencida(t,dia),fim=ehFinal(t,dia);
+  var cls='pill'+(done?' done':'')+(venc?' venc':'')+((fim&&!venc)?' fim':'')+(t.prio==='alta'?' alta':'');
+  var fogo=t.prio==='alta'?'🔥 ':'';
+  return '<span class="'+cls+'" style="--resp:'+corResp(t.resp)+'" onclick="event.stopPropagation();abrirTarefa(\''+t.id+'\')" title="'+esc(t.titulo)+(t.resp?' — '+esc(t.resp):'')+(fim?' (prazo final)':'')+'">'+
+    '<span class="pchk'+(done?' on':'')+'" onclick="event.stopPropagation();toggleFeita(\''+t.id+'\',\''+dia+'\')" title="Concluir"></span>'+
+    (t.hora?'<span class="h">'+t.hora+'</span> ':'')+fogo+esc(t.titulo)+'</span>';
 }
 function itemHTML(t,dia,comData){
-  var done=feita(t,dia);
+  var done=feita(t,dia),fim=ehFinal(t,dia);
+  var multi=(!t.rec||t.rec==='nenhuma')&&t.dataFim&&t.dataFim>t.data;
   var sub=[];
   if(comData)sub.push(fmtBR(dia));
   if(t.resp)sub.push('<span class="tag-resp" style="--resp:'+corResp(t.resp)+'">'+esc(t.resp)+'</span>');
   if(vencida(t,dia))sub.push('<span class="tag-venc">⚠ vencida</span>');
+  else if(fim)sub.push('<span class="tag-fim">🏁 prazo final</span>');
   if(t.prio==='alta')sub.push('<span class="tag-alta">🔥 alta</span>');
   if(t.rec&&t.rec!=='nenhuma')sub.push('<span class="tag-rec">↻ rotina</span>');
+  if(multi)sub.push('<span class="tag-rec">'+fmtBR(t.data).slice(0,5)+'→'+fmtBR(t.dataFim).slice(0,5)+'</span>');
   if(t.obs)sub.push(esc(t.obs.slice(0,60)));
   return '<div class="dia-item">'+
     '<div class="dia-hora">'+(t.hora||'—')+'</div>'+
     '<button class="check'+(done?' on':'')+'" onclick="toggleFeita(\''+t.id+'\',\''+dia+'\')" title="Marcar como concluída"></button>'+
     '<div class="t-corpo" onclick="abrirTarefa(\''+t.id+'\')">'+
-      '<div class="t-tit'+(done?' done':'')+'">'+esc(t.titulo)+'</div>'+
+      '<div class="t-tit'+(done?' done':'')+'">'+(t.prio==='alta'?'🔥 ':'')+esc(t.titulo)+'</div>'+
       '<div class="t-sub">'+sub.join(' ')+'</div>'+
     '</div></div>';
 }
@@ -376,7 +401,7 @@ function desenhar(){
     var cab='',cols='';
     for(var i=0;i<7;i++){
       var dia=addDias(ini,i);
-      cab+='<div class="sem-cab'+(dia===hojeISO()?' hoje':'')+'"><div class="d">'+DIAS_L[i]+'</div><div class="n">'+deISO(dia).getDate()+'</div></div>';
+      cab+='<div class="sem-cab'+(dia===hojeISO()?' hoje':'')+'" onclick="cursor=\''+dia+'\';setView(\'dia\')" title="Ver o dia"><div class="d">'+DIAS_L[i]+'</div><div class="n">'+deISO(dia).getDate()+'</div></div>';
       var ts=tarefasDoDia(dia);
       cols+='<div class="sem-col">'+
         '<button class="sem-add" onclick="novaTarefa(\''+dia+'\')">+</button>'+
@@ -407,7 +432,7 @@ function desenhar(){
           else if(d<=addDias(h,7))prox.push([t,d]);
         }
       } else {
-        var d=t.data;
+        var d=prazoDe(t);
         if(feita(t,d)){concl.push([t,d]);return;}
         if(vencida(t,d))vencidas.push([t,d]);
         else if(d===h)hoje.push([t,d]);
@@ -444,8 +469,10 @@ function montarDias(sel){
   }).join('');
 }
 function mostraDias(){
-  document.getElementById('m-dias-wrap').style.display=
-    document.getElementById('m-rec').value==='semanal'?'block':'none';
+  var rec=document.getElementById('m-rec').value;
+  document.getElementById('m-dias-wrap').style.display=rec==='semanal'?'block':'none';
+  // intervalo (termino) so faz sentido para tarefa que nao repete
+  document.getElementById('m-fim-wrap').style.display=rec==='nenhuma'?'block':'none';
 }
 function novaTarefa(dia){
   editandoId=null;
@@ -453,6 +480,7 @@ function novaTarefa(dia){
   document.getElementById('m-tit').value='';
   document.getElementById('m-resp').value='';
   document.getElementById('m-data').value=(typeof dia==='string')?dia:cursor;
+  document.getElementById('m-datafim').value='';
   document.getElementById('m-hora').value='';
   document.getElementById('m-prio').value='normal';
   document.getElementById('m-rec').value='nenhuma';
@@ -469,6 +497,7 @@ function abrirTarefa(id){
   document.getElementById('m-tit').value=t.titulo||'';
   document.getElementById('m-resp').value=t.resp||'';
   document.getElementById('m-data').value=t.data||hojeISO();
+  document.getElementById('m-datafim').value=t.dataFim||'';
   document.getElementById('m-hora').value=t.hora||'';
   document.getElementById('m-prio').value=t.prio||'normal';
   document.getElementById('m-rec').value=t.rec||'nenhuma';
@@ -481,15 +510,20 @@ function salvarTarefa(){
   var tit=document.getElementById('m-tit').value.trim();
   var data=document.getElementById('m-data').value;
   if(!tit){alert('Dê um título para a tarefa.');return;}
-  if(!data){alert('Escolha a data (para rotinas, é a data de início).');return;}
+  if(!data){alert('Escolha a data de início.');return;}
+  var recV=document.getElementById('m-rec').value;
+  var fim=document.getElementById('m-datafim').value;
+  if(recV!=='nenhuma')fim='';
+  if(fim&&fim<data){alert('O término não pode ser antes do início.');return;}
   var dias=[];document.querySelectorAll('#m-dias .dia-chk.on').forEach(function(e){dias.push(+e.dataset.d);});
   var obj={
     titulo:tit,
     resp:document.getElementById('m-resp').value.trim(),
     data:data,
+    dataFim:fim,
     hora:document.getElementById('m-hora').value,
     prio:document.getElementById('m-prio').value,
-    rec:document.getElementById('m-rec').value,
+    rec:recV,
     recDias:dias,
     obs:document.getElementById('m-obs').value.trim()
   };
@@ -509,7 +543,11 @@ function excluirTarefa(){
   salvar();fecharModal();desenhar();
 }
 function fecharModal(){document.getElementById('overlay').classList.remove('open');editandoId=null;}
-document.addEventListener('keydown',function(e){if(e.key==='Escape')fecharModal();});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){fecharModal();return;}
+  var emCampo=/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName||'');
+  if((e.key==='n'||e.key==='N')&&!emCampo&&!document.getElementById('overlay').classList.contains('open')){e.preventDefault();novaTarefa();}
+});
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
