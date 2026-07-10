@@ -147,7 +147,7 @@ const FERRAMENTAS = [
     tag: 'Logística',
     icon: '🚚',
     desc: 'Cota frete em Melhor Envio, Frenet e Braspress de uma vez, com histórico e rastreamento de envios.',
-    url: 'ferramentas/fretes/cotacao.html',
+    url: 'https://ramon-explotools.github.io/explotools-frete-frontend/cotacao.html',
     health: 'https://explotools-frete-api.onrender.com/health',
     cor: '#d81b2a', corDim: 'rgba(216,27,42,.12)'
   },
@@ -157,7 +157,7 @@ const FERRAMENTAS = [
     tag: 'Estoque',
     icon: '📦',
     desc: 'Gera o PDF de separação (envio/coleta) e de recebimento a partir dos PDFs, cruzando com a base de localização do estoque.',
-    url: 'ferramentas/estoque/index.html',
+    url: 'https://ramon-explotools.github.io/explotools-coleta-frontend/index.html',
     health: 'https://explotools-coleta-api.onrender.com/api/health',
     cor: '#2f7fe0', corDim: 'rgba(47,127,224,.12)'
   },
@@ -168,7 +168,6 @@ const FERRAMENTAS = [
     icon: '🎙️',
     desc: 'Gera o episódio quinzenal: pesquisa, relatório, áudio no NotebookLM e divulgação. Você roda, autentica e acompanha o processo aqui.',
     url: 'http://127.0.0.1:8765/',
-    alvo: '_blank',
     health: null,
     statusLabel: 'Abre no seu PC',
     cor: '#7c3aed', corDim: 'rgba(124,58,237,.12)'
@@ -179,7 +178,7 @@ const FERRAMENTAS = [
     tag: 'Logística',
     icon: '🗒️',
     desc: 'Tabela manual dos fretes em andamento: material enviado e compras a receber, com cliente, transportadora, previsão e status.',
-    url: 'ferramentas/acompanhamento-fretes/index.html',
+    url: 'https://ramon-explotools.github.io/explotools-acompanhamento-fretes/index.html',
     health: null,
     statusLabel: 'Planilha manual',
     cor: '#e8870c', corDim: 'rgba(232,135,12,.12)'
@@ -190,7 +189,7 @@ const FERRAMENTAS = [
     tag: 'Gestão',
     icon: '🗓️',
     desc: 'Agenda de tarefas do time: visões dia/semana/mês/lista, rotinas com horário, prazos, alertas de vencido, filtros e conclusão. Compartilhado entre todos.',
-    url: 'ferramentas/tarefas/index.html',
+    url: 'https://ramon-explotools.github.io/explotools-tarefas/index.html',
     health: null,
     statusLabel: 'Compartilhado',
     cor: '#e0447a', corDim: 'rgba(224,68,122,.12)'
@@ -214,7 +213,10 @@ FERRAMENTAS.forEach(function(f) {
   const a = document.createElement('a');
   a.className = 'tool-card';
   a.href = f.url;
-  if (f.alvo) { a.target = f.alvo; a.rel = 'noopener'; }
+  // Todo card aponta para uma URL publicada por conta própria (nunca embutida
+  // no hub) — sempre abre em nova aba.
+  a.target = '_blank';
+  a.rel = 'noopener';
   a.style.setProperty('--accent', f.cor);
   a.style.setProperty('--accent-dim', f.corDim);
   a.innerHTML =
