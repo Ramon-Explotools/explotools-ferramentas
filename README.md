@@ -5,6 +5,10 @@ vive e é publicada por conta própria; o status ao lado mostra se ela está ati
 
 🔗 **No ar:** https://ramon-explotools.github.io/explotools-ferramentas/
 
+📁 **Pasta canônica de edição (com `CLAUDE.md` completo sobre a plataforma):**
+`Explotools\Claude\Central de Ferramentas\` — abra uma conversa do Claude Code lá para
+editar o hub em si (o portal, não uma ferramenta específica).
+
 ## ⚠️ Princípio central: este repositório é SÓ um agregador
 
 **Este repositório nunca contém código de nenhuma ferramenta — só o `index.html` do
