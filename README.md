@@ -39,6 +39,7 @@ deixe aqui só o link.
 | Ação | Onde mora (Drive) | Servido por |
 |---|---|---|
 | Cobranças vencidas | `Cobrancas em Atraso\` (`painel_cobrancas.py`) | serviço local do Café com Sonda (`127.0.0.1:8765/cobrancas`) |
+| NF de Importação | `Documents\Codex\...\nf-importacao-app\` (feito no Codex — **não editar**) | atalho `127.0.0.1:8765/abrir/nf-importacao`: liga o sistema (porta 4317) se estiver desligado e redireciona. Lista de atalhos: `AppData\Local\Explotools\atalhos_locais.py` |
 
 Cada pasta acima tem seu próprio `CLAUDE.md` explicando como funciona, como publicar e
 como se conecta a este hub.
