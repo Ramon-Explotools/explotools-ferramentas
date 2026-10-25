@@ -33,6 +33,7 @@ deixe aqui só o link.
 | Café com Sonda | `Podcast Quinzenl\` | serviço local (`127.0.0.1:8765`) | — |
 | Acompanhamento de Fretes | `Acompanhamento de Fretes\` | `explotools-acompanhamento-fretes` (Pages) | Cloudflare KV |
 | Controle de Tarefas | `Controle de Tarefas\` | `explotools-tarefas` (Pages) | Cloudflare KV |
+| Correlação de Pedidos | `Correlacao de Pedidos\` | `explotools-correlacao-pedidos` (Cloudflare Worker) | D1 + KV |
 
 ## Ações rápidas (botões, não são cards de projeto)
 
